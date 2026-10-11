@@ -1,0 +1,173 @@
+/* Theme tokens: Azure DevOps injects its theme variables (applyTheme: true); fallbacks = light theme. */
+:root {
+  --mdr-bg: var(--background-color, #ffffff);
+  --mdr-fg: var(--text-primary-color, rgba(0, 0, 0, 0.9));
+  --mdr-muted: var(--text-secondary-color, rgba(0, 0, 0, 0.55));
+  /* Azure DevOps injects --communication-* as hex (e.g. #0078d4), not RGB triples,
+     so rgb()/rgba() wrapping breaks. Use a solid hex accent plus a fixed triple for tints. */
+  --mdr-accent: var(--communication-background, #0078d4);
+  --mdr-accent-rgb: 0, 120, 212;
+  --mdr-border: rgba(128, 128, 128, 0.3);
+  --mdr-surface: rgba(128, 128, 128, 0.08);
+  --mdr-hover: rgba(var(--mdr-accent-rgb), 0.07);
+  --mdr-selected: rgba(var(--mdr-accent-rgb), 0.14);
+  --mdr-thread: rgba(255, 185, 0, 0.9);
+  --mdr-ok: #107c10;
+  --mdr-radius: 4px;
+  --mdr-font: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+  --mdr-mono: "Cascadia Code", Consolas, "SF Mono", Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { background: var(--mdr-bg); color: var(--mdr-fg); font: 14px/1.5 var(--mdr-font); }
+
+.mdr-app {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr) 360px;
+  height: 100%;
+  min-height: 600px;
+}
+
+/* ---------- File list ---------- */
+.mdr-files { border-right: 1px solid var(--mdr-border); overflow-y: auto; padding: 12px 8px; }
+.mdr-section-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--mdr-muted); margin: 0 4px 8px; }
+.mdr-file {
+  display: grid; grid-template-columns: 1fr auto; gap: 0 6px; width: 100%;
+  text-align: left; background: none; border: 0; border-radius: var(--mdr-radius);
+  padding: 6px 8px; color: inherit; font: inherit; cursor: pointer;
+}
+.mdr-file:hover { background: var(--mdr-hover); }
+.mdr-file.active { background: var(--mdr-selected); }
+.mdr-file-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mdr-file-dir { grid-column: 1; font-size: 12px; color: var(--mdr-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mdr-tag { grid-column: 2; grid-row: 1; font-size: 11px; color: var(--mdr-ok); }
+.mdr-count {
+  grid-column: 2; grid-row: 2; justify-self: end; min-width: 18px; padding: 0 5px;
+  border-radius: 9px; background: var(--mdr-thread); color: #000; font-size: 11px; text-align: center;
+}
+
+/* ---------- Main preview ---------- */
+.mdr-main { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.mdr-toolbar {
+  display: flex; align-items: center; gap: 12px; padding: 8px 16px;
+  border-bottom: 1px solid var(--mdr-border);
+}
+.mdr-path { flex: 1; font-family: var(--mdr-mono); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mdr-check { display: flex; align-items: center; gap: 4px; font-size: 13px; white-space: nowrap; cursor: pointer; }
+.mdr-hint { padding: 6px 16px; font-size: 12px; color: var(--mdr-muted); background: var(--mdr-surface); }
+
+.mdr-preview { flex: 1; overflow-y: auto; padding: 16px 64px 64px 32px; }
+
+/* Every rendered block is clickable */
+.mdr-preview [data-sl] { position: relative; border-radius: var(--mdr-radius); cursor: pointer; transition: background-color 80ms; }
+.mdr-preview .mdr-hover { background: var(--mdr-hover); box-shadow: -3px 0 0 rgba(var(--mdr-accent-rgb), 0.45); }
+.mdr-preview .mdr-selected { background: var(--mdr-selected); box-shadow: -3px 0 0 var(--mdr-accent); }
+
+/* Blocks with existing threads: left rule + count bubble */
+.mdr-preview .mdr-has-thread { box-shadow: -3px 0 0 rgba(150, 150, 150, 0.6); }
+.mdr-preview .mdr-has-active { box-shadow: -3px 0 0 var(--mdr-thread); }
+.mdr-preview .mdr-has-thread::before,
+.mdr-preview .mdr-row-badge::after {
+  content: "\1F4AC  " attr(data-thread-count);
+  font-size: 11px; line-height: 18px; padding: 0 6px; border-radius: 9px; white-space: nowrap; pointer-events: none;
+  background: var(--mdr-surface); border: 1px solid var(--mdr-border); color: var(--mdr-fg);
+}
+/* Default: bubble sits in the right gutter, never over the text */
+.mdr-preview .mdr-has-thread::before { position: absolute; right: -52px; top: 2px; }
+/* Code blocks scroll horizontally (overflow clips the gutter): keep the bubble inside */
+.mdr-preview code.mdr-has-thread::before { right: 4px; }
+/* Table rows: a pseudo-element on <tr> would become an extra cell, so the bubble goes inline in the last cell */
+.mdr-preview tr.mdr-has-thread::before { content: none; }
+.mdr-preview .mdr-row-badge::after { display: inline-block; margin-left: 8px; }
+.mdr-preview .mdr-has-active::before,
+.mdr-preview .mdr-has-active > .mdr-row-badge::after { background: var(--mdr-thread); color: #000; border-color: transparent; }
+
+/* ---------- Markdown typography (GitHub/ADO-like) ---------- */
+.markdown-body { word-wrap: break-word; }
+.markdown-body > :first-child { margin-top: 0; }
+.markdown-body h1, .markdown-body h2 { padding-bottom: 0.3em; border-bottom: 1px solid var(--mdr-border); }
+.markdown-body h1 { font-size: 2em; margin: 0.67em 0; }
+.markdown-body h2 { font-size: 1.5em; margin: 1.2em 0 0.6em; }
+.markdown-body h3 { font-size: 1.25em; margin: 1.2em 0 0.5em; }
+.markdown-body h4, .markdown-body h5, .markdown-body h6 { margin: 1em 0 0.4em; }
+.markdown-body p, .markdown-body ul, .markdown-body ol, .markdown-body blockquote, .markdown-body table, .markdown-body pre { margin: 0 0 16px; }
+.markdown-body ul, .markdown-body ol { padding-left: 2em; }
+.markdown-body li + li { margin-top: 0.25em; }
+.markdown-body blockquote { padding: 0 1em; color: var(--mdr-muted); border-left: 0.25em solid var(--mdr-border); }
+.markdown-body code { font-family: var(--mdr-mono); font-size: 85%; padding: 0.2em 0.4em; border-radius: 3px; background: var(--mdr-surface); }
+.markdown-body pre { padding: 12px 16px; overflow: auto; border-radius: var(--mdr-radius); background: var(--mdr-surface); }
+.markdown-body pre code { padding: 0; background: none; font-size: 13px; display: block; }
+.markdown-body table { border-collapse: collapse; display: block; overflow: auto; }
+.markdown-body th, .markdown-body td { border: 1px solid var(--mdr-border); padding: 6px 13px; }
+.markdown-body th { font-weight: 600; background: var(--mdr-surface); }
+.markdown-body img { max-width: 100%; }
+.markdown-body a { color: var(--mdr-accent); }
+.markdown-body hr { border: 0; height: 2px; background: var(--mdr-border); margin: 24px 0; }
+.mdr-img-loading { opacity: 0.4; min-width: 40px; min-height: 20px; background: var(--mdr-surface); }
+.mdr-img-error { outline: 1px dashed #d13438; }
+
+/* ---------- Comment panel ---------- */
+.mdr-panel { border-left: 1px solid var(--mdr-border); overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.mdr-panel-head { display: flex; align-items: center; justify-content: space-between; }
+.mdr-panel-head .mdr-section-title { margin-bottom: 0; }
+.mdr-icon-btn { background: none; border: 0; font-size: 20px; line-height: 1; color: var(--mdr-muted); cursor: pointer; padding: 2px 6px; }
+.mdr-src {
+  margin: 0; padding: 6px 0; max-height: 220px; overflow: auto; font: 12px/1.5 var(--mdr-mono);
+  background: var(--mdr-surface); border: 1px solid var(--mdr-border); border-radius: var(--mdr-radius);
+}
+.mdr-src-line { display: flex; white-space: pre-wrap; }
+.mdr-src-num { flex: 0 0 38px; padding-right: 8px; text-align: right; color: var(--mdr-muted); user-select: none; }
+.mdr-src-text { flex: 1; padding-right: 8px; word-break: break-word; }
+.mdr-src mark { background: rgba(var(--mdr-accent-rgb), 0.22); color: inherit; border-radius: 2px; }
+
+.mdr-thread { border: 1px solid var(--mdr-border); border-radius: var(--mdr-radius); padding: 8px 10px; }
+.mdr-thread.is-open { border-left: 3px solid var(--mdr-thread); }
+.mdr-thread.is-closed { opacity: 0.75; }
+.mdr-thread-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.mdr-pill { font-size: 11px; padding: 0 8px; border-radius: 9px; line-height: 18px; }
+.pill-open { background: var(--mdr-thread); color: #000; }
+.pill-closed { background: var(--mdr-surface); border: 1px solid var(--mdr-border); }
+.mdr-comment + .mdr-comment { border-top: 1px solid var(--mdr-border); margin-top: 6px; padding-top: 6px; }
+.mdr-comment-meta { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+.mdr-comment-meta span { color: var(--mdr-muted); }
+.mdr-comment-body { font-size: 13px; }
+.mdr-comment-body p:last-child { margin-bottom: 4px; }
+
+.mdr-new { position: sticky; bottom: 0; background: var(--mdr-bg); padding: 8px 0 12px; }
+.mdr-new textarea, .mdr-reply textarea {
+  width: 100%; min-height: 90px; resize: vertical; padding: 8px; font: 13px/1.4 var(--mdr-font);
+  color: inherit; background: var(--mdr-bg); border: 1px solid var(--mdr-border); border-radius: var(--mdr-radius);
+}
+.mdr-reply textarea { min-height: 60px; margin-top: 6px; }
+.mdr-new textarea:focus, .mdr-reply textarea:focus { outline: 2px solid var(--mdr-accent); outline-offset: -1px; }
+.mdr-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 6px; }
+
+.mdr-btn {
+  font: 13px var(--mdr-font); padding: 4px 12px; border-radius: 2px; cursor: pointer;
+  color: inherit; background: var(--mdr-surface); border: 1px solid var(--mdr-border);
+}
+.mdr-btn:hover:not(:disabled) { background: var(--mdr-hover); }
+.mdr-btn.primary { background: var(--mdr-accent); border-color: transparent; color: #fff; }
+/* Match the Azure DevOps "Complete" button: darken on hover/press instead of brightening. */
+.mdr-btn.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--mdr-accent) 85%, #000); }
+.mdr-btn.primary:active:not(:disabled) { background: color-mix(in srgb, var(--mdr-accent) 72%, #000); }
+.mdr-btn:disabled { opacity: 0.5; cursor: default; }
+.mdr-link { background: none; border: 0; padding: 0; font: 12px var(--mdr-mono); color: var(--mdr-accent); cursor: pointer; }
+
+.mdr-empty { padding: 48px 24px; text-align: center; color: var(--mdr-muted); }
+.mdr-error { color: #d13438; }
+.mdr-muted { color: var(--mdr-muted); font-size: 13px; }
+.mdr-toast {
+  position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+  padding: 8px 16px; border-radius: var(--mdr-radius); background: #323130; color: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25); font-size: 13px; z-index: 10;
+}
+
+/* Narrow layouts: file list on top, panel below */
+@media (max-width: 1000px) {
+  .mdr-preview { padding: 16px 56px 48px 16px; }
+  .mdr-app { grid-template-columns: 1fr; grid-template-rows: auto minmax(400px, 1fr) auto; height: auto; }
+  .mdr-files { border-right: 0; border-bottom: 1px solid var(--mdr-border); max-height: 160px; }
+  .mdr-panel { border-left: 0; border-top: 1px solid var(--mdr-border); }
+}

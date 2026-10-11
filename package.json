@@ -1,0 +1,39 @@
+{
+  "name": "md-commenter",
+  "version": "0.1.14",
+  "private": true,
+  "description": "Azure DevOps extension: comment on rendered Markdown in Pull Requests",
+  "scripts": {
+    "build": "webpack --mode production && node scripts/check-bundle.js",
+    "build:dev": "webpack --mode development && node scripts/check-bundle.js",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx test/sourceMap.test.ts",
+    "package": "npm run build && tfx extension create --manifest-globs vss-extension.json --output-path out",
+    "package:dev": "npm run build:dev && tfx extension create --manifest-globs vss-extension.json --overrides-file overrides.dev.json --output-path out",
+    "publish": "npm run build && tfx extension publish --manifest-globs vss-extension.json --output-path out",
+    "publish:dev": "npm run build:dev && tfx extension publish --manifest-globs vss-extension.json --overrides-file overrides.dev.json --output-path out",
+    "harness": "webpack --config webpack.harness.js"
+  },
+  "dependencies": {
+    "azure-devops-extension-api": "^4.230.0",
+    "azure-devops-extension-sdk": "^4.0.2",
+    "markdown-it": "^14.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
+    "@types/node": "^20.19.43",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "css-loader": "^7.1.2",
+    "esbuild-loader": "^4.5.0",
+    "html-webpack-plugin": "^5.6.3",
+    "style-loader": "^4.0.0",
+    "tfx-cli": "^0.21.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "webpack": "^5.96.1",
+    "webpack-cli": "^5.1.4"
+  }
+}
