@@ -11,6 +11,8 @@ export interface BlockPick {
 interface Props {
   html: string;
   threads: ReviewThread[];
+  /** Right-side source lines added in this PR; their rendered blocks get a green background. */
+  addedLines: Set<number>;
   selected: { startLine: number; endLine: number } | null;
   onPick(pick: BlockPick): void;
   onRelativeLink(href: string): void;
@@ -45,7 +47,7 @@ function blockForLine(root: HTMLElement, line: number): HTMLElement | null {
   return best;
 }
 
-export function MarkdownPreview({ html, threads, selected, onPick, onRelativeLink, resolveImage }: Props) {
+export function MarkdownPreview({ html, threads, addedLines, selected, onPick, onRelativeLink, resolveImage }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const hoverRef = useRef<HTMLElement | null>(null);
 
@@ -99,6 +101,14 @@ export function MarkdownPreview({ html, threads, selected, onPick, onRelativeLin
       }
     });
   }, [html, threads]);
+
+  // Tint the smallest block over each added source line (diff-style green).
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    root.querySelectorAll(".mdr-added").forEach((el) => el.classList.remove("mdr-added"));
+    addedLines.forEach((line) => blockForLine(root, line)?.classList.add("mdr-added"));
+  }, [html, addedLines]);
 
   // Highlight the selected range and bring it into view.
   useEffect(() => {

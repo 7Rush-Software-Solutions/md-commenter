@@ -44,6 +44,34 @@ const FILES: Record<string, string> = {
   "/README.md": ["# Proyecto", "", "Resumen corto del repo."].join("\n")
 };
 
+/** Merge-base ("left side") versions for modified files, so the harness shows added-line highlights. */
+const BASE_FILES: Record<string, string> = {
+  // architecture.md without the Redis/Keycloak bullets and the code block -> those render green.
+  "/docs/architecture.md": [
+    "# Arquitectura de PROYECTO",
+    "",
+    "Este documento describe la **arquitectura multi-tenant** del backend",
+    "y las decisiones tomadas para el despliegue en Azure KS.",
+    "",
+    "## Componentes",
+    "",
+    "- API en ASP.NET Core 10 con EF Core",
+    "- PostgreSQL con un esquema por tenant",
+    "",
+    "| Servicio | Puerto | Responsable |",
+    "|----------|--------|-------------|",
+    "| api      | 5000   | Backend     |",
+    "| keycloak | 8080   | Infra       |",
+    "",
+    "> Nota: el esquema por tenant se revisa en Q1.",
+    "",
+    "![Diagrama](./img/diagram.svg)",
+    "",
+    "Ver también [la guía de despliegue](./deploy.md) y [EF Core](https://learn.microsoft.com/ef/core/)."
+  ].join("\n"),
+  "/README.md": ["# Proyecto", "", "Resumen corto del repo."].join("\n") // unchanged -> no highlight
+};
+
 const me = { displayName: "Fredy", id: "u1" };
 let nextId = 100;
 const threadsByFile: Record<string, ReviewThread[]> = {
@@ -112,7 +140,7 @@ const delay = <T>(v: T, ms = 120) => new Promise<T>((r) => setTimeout(() => r(v)
 
 export async function resolvePrContext(): Promise<PrContext> {
   return delay({
-    project: "p1", repositoryId: "r1", pullRequestId: 42, iterationId: 3, commitId: "abc123",
+    project: "p1", repositoryId: "r1", pullRequestId: 42, iterationId: 3, commitId: "abc123", baseCommitId: "base000",
     pullRequest: { repository: { name: "odentys-api", project: { name: "ODENTYS" } } } as any
   });
 }
@@ -127,6 +155,10 @@ export async function listMarkdownFiles(): Promise<MdFile[]> {
 
 export async function getFileText(_ctx: PrContext, path: string): Promise<string> {
   return delay(FILES[path] ?? "");
+}
+
+export async function getFileBaseText(_ctx: PrContext, path: string): Promise<string> {
+  return delay(BASE_FILES[path] ?? "");
 }
 
 export async function getImageObjectUrl(): Promise<string> {

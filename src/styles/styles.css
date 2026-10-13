@@ -64,6 +64,10 @@ body { background: var(--mdr-bg); color: var(--mdr-fg); font: 14px/1.5 var(--mdr
 .mdr-preview .mdr-hover { background: var(--mdr-hover); box-shadow: -3px 0 0 rgba(var(--mdr-accent-rgb), 0.45); }
 .mdr-preview .mdr-selected { background: var(--mdr-selected); box-shadow: -3px 0 0 var(--mdr-accent); }
 
+/* Blocks containing lines added in this PR: diff-style green */
+.mdr-preview .mdr-added { background: rgba(46, 160, 67, 0.15); box-shadow: -3px 0 0 rgba(46, 160, 67, 0.8); }
+.mdr-preview .mdr-added.mdr-selected { background: var(--mdr-selected); }
+
 /* Blocks with existing threads: left rule + count bubble */
 .mdr-preview .mdr-has-thread { box-shadow: -3px 0 0 rgba(150, 150, 150, 0.6); }
 .mdr-preview .mdr-has-active { box-shadow: -3px 0 0 var(--mdr-thread); }

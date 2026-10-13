@@ -1,6 +1,6 @@
 {
   "name": "md-commenter",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "private": true,
   "description": "Azure DevOps extension: comment on rendered Markdown in Pull Requests",
   "scripts": {

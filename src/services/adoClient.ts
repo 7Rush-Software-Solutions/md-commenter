@@ -24,6 +24,8 @@ export interface PrContext {
   /** Latest iteration: the "right side" of the full PR diff. */
   iterationId: number;
   commitId: string;
+  /** Merge base (left side of the full PR diff), used to detect added lines. */
+  baseCommitId: string;
 }
 
 export interface MdFile {
@@ -101,7 +103,8 @@ export async function resolvePrContext(report: (stage: string) => void = () => u
     pullRequestId,
     pullRequest,
     iterationId: latest.id,
-    commitId: latest.sourceRefCommit?.commitId ?? pullRequest.lastMergeSourceCommit.commitId
+    commitId: latest.sourceRefCommit?.commitId ?? pullRequest.lastMergeSourceCommit.commitId,
+    baseCommitId: latest.commonRefCommit?.commitId ?? pullRequest.lastMergeTargetCommit?.commitId ?? ""
   };
 }
 
@@ -136,6 +139,11 @@ const atCommit = (commitId: string) => ({
 /** File text at the PR's latest source commit (the right side of the diff). */
 export function getFileText(ctx: PrContext, path: string): Promise<string> {
   return git().getItemText(ctx.repositoryId, path, ctx.project, undefined, undefined, false, false, false, atCommit(ctx.commitId), true);
+}
+
+/** File text at the PR's merge base (the left side of the diff), for computing added lines. */
+export function getFileBaseText(ctx: PrContext, path: string): Promise<string> {
+  return git().getItemText(ctx.repositoryId, path, ctx.project, undefined, undefined, false, false, false, atCommit(ctx.baseCommitId), true);
 }
 
 const MIME: Record<string, string> = {
