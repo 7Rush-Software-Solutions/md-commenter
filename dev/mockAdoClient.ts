@@ -47,16 +47,26 @@ const FILES: Record<string, string> = {
 /** Merge-base ("left side") versions for modified files, so the harness shows added-line highlights. */
 const BASE_FILES: Record<string, string> = {
   // architecture.md without the Redis/Keycloak bullets and the code block -> those render green.
+  // Includes a deprecated bullet and a draft note that were removed -> those render red.
   "/docs/architecture.md": [
     "# Arquitectura de PROYECTO",
     "",
+    "> Borrador: pendiente de revisión por Infra.",
+    "",
     "Este documento describe la **arquitectura multi-tenant** del backend",
     "y las decisiones tomadas para el despliegue en Azure KS.",
+    "",
+    "## Requisitos previos",
+    "",
+    "- Cuenta de Azure con permisos de owner",
+    "- CLI de Azure 2.60+ instalada",
+    "- Acceso al registro de contenedores",
     "",
     "## Componentes",
     "",
     "- API en ASP.NET Core 10 con EF Core",
     "- PostgreSQL con un esquema por tenant",
+    "- MongoDB para logs (deprecado)",
     "",
     "| Servicio | Puerto | Responsable |",
     "|----------|--------|-------------|",

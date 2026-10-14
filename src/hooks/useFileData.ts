@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { getFileBaseText, getFileText, getFileThreads, MdFile, PrContext, ReviewThread } from "../services/adoClient";
-import { addedLineNumbers } from "../markdown/diff";
+import { addedLineNumbers, removedSegments, RemovedSegment } from "../markdown/diff";
 import { errorText } from "../util";
 
 const NO_ADDED: Set<number> = new Set();
+const NO_REMOVED: RemovedSegment[] = [];
 
 interface FileData {
   text: string;
   threads: ReviewThread[];
   /** Right-side source lines added in this PR (empty for brand-new files). */
   addedLines: Set<number>;
+  /** Contiguous runs of base lines deleted in this PR (empty for brand-new files). */
+  removedLines: RemovedSegment[];
   loading: boolean;
   error?: string;
   /** Re-fetch only the threads for the current file (after posting/replying/status changes). */
@@ -21,6 +24,7 @@ export function useFileData(ctx: PrContext | undefined, file: MdFile | undefined
   const [text, setText] = useState("");
   const [threads, setThreads] = useState<ReviewThread[]>([]);
   const [addedLines, setAddedLines] = useState<Set<number>>(NO_ADDED);
+  const [removedLines, setRemovedLines] = useState<RemovedSegment[]>(NO_REMOVED);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
 
@@ -44,6 +48,7 @@ export function useFileData(ctx: PrContext | undefined, file: MdFile | undefined
         setText(txt);
         setThreads(th);
         setAddedLines(baseTxt == null ? NO_ADDED : addedLineNumbers(baseTxt, txt));
+        setRemovedLines(baseTxt == null ? NO_REMOVED : removedSegments(baseTxt, txt));
       })
       .catch((e) => !cancelled && setError(errorText(e)))
       .finally(() => !cancelled && setLoading(false));
@@ -52,5 +57,5 @@ export function useFileData(ctx: PrContext | undefined, file: MdFile | undefined
     };
   }, [ctx, file]);
 
-  return { text, threads, addedLines, loading, error, reload };
+  return { text, threads, addedLines, removedLines, loading, error, reload };
 }

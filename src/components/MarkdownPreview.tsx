@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { END_ATTR, START_ATTR } from "../markdown/sourceMap";
+import { RemovedSegment } from "../markdown/diff";
 import { ReviewThread } from "../services/adoClient";
 
 export interface BlockPick {
@@ -13,6 +14,8 @@ interface Props {
   threads: ReviewThread[];
   /** Right-side source lines added in this PR; their rendered blocks get a green background. */
   addedLines: Set<number>;
+  /** Deleted base-line runs to show inline (red, struck-through, inert) where they used to be. */
+  removedLines: RemovedSegment[];
   selected: { startLine: number; endLine: number } | null;
   onPick(pick: BlockPick): void;
   onRelativeLink(href: string): void;
@@ -47,7 +50,18 @@ function blockForLine(root: HTMLElement, line: number): HTMLElement | null {
   return best;
 }
 
-export function MarkdownPreview({ html, threads, addedLines, selected, onPick, onRelativeLink, resolveImage }: Props) {
+/** Highest block ancestor that is still a direct child of the preview root (keeps injected rows top-level). */
+function topLevelBlockForLine(root: HTMLElement, line: number): HTMLElement | null {
+  let el = blockForLine(root, line);
+  while (el && el.parentElement && el.parentElement !== root) {
+    const parent = el.parentElement.closest<HTMLElement>(BLOCK_SELECTOR);
+    if (!parent || !root.contains(parent)) break;
+    el = parent;
+  }
+  return el;
+}
+
+export function MarkdownPreview({ html, threads, addedLines, removedLines, selected, onPick, onRelativeLink, resolveImage }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const hoverRef = useRef<HTMLElement | null>(null);
 
@@ -109,6 +123,25 @@ export function MarkdownPreview({ html, threads, addedLines, selected, onPick, o
     root.querySelectorAll(".mdr-added").forEach((el) => el.classList.remove("mdr-added"));
     addedLines.forEach((line) => blockForLine(root, line)?.classList.add("mdr-added"));
   }, [html, addedLines]);
+
+  // Inject deleted base-line runs as inert red blocks where they used to sit.
+  // No source-map attrs, so hover/click/selection logic skips them entirely.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    root.querySelectorAll(".mdr-removed").forEach((el) => el.remove());
+    for (const seg of removedLines) {
+      const text = seg.lines.join("\n");
+      if (!text.trim()) continue; // skip splitLines' trailing-newline artifact and blank-only runs
+      const block = document.createElement("pre");
+      block.className = "mdr-removed";
+      block.setAttribute("aria-label", "Deleted");
+      block.textContent = text; // raw source — never parsed as markdown/HTML
+      const anchor = seg.afterRightLine > 0 ? topLevelBlockForLine(root, seg.afterRightLine) : null;
+      if (anchor) anchor.after(block);
+      else root.insertBefore(block, root.firstChild); // top of file
+    }
+  }, [html, removedLines]);
 
   // Highlight the selected range and bring it into view.
   useEffect(() => {

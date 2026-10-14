@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { computeAnchor, createRenderer, resolveRepoPath, splitLines } from "../src/markdown/sourceMap.ts";
+import { addedLineNumbers, removedSegments } from "../src/markdown/diff.ts";
 
 const md = createRenderer();
 const source = [
@@ -67,6 +68,31 @@ test("relative image paths resolve against the md folder", () => {
   assert.equal(resolveRepoPath("/docs/guide/intro.md", "../img/a%20b.png"), "/docs/img/a b.png");
   assert.equal(resolveRepoPath("/README.md", "./assets/x.svg?raw=1"), "/assets/x.svg");
   assert.equal(resolveRepoPath("/docs/a.md", "/root.png"), "/root.png");
+});
+
+test("removedSegments: middle deletion anchored after the preceding kept line", () => {
+  const base = ["a", "b", "c", "d"].join("\n");
+  const right = ["a", "d"].join("\n");
+  assert.deepEqual(removedSegments(base, right), [{ afterRightLine: 1, lines: ["b", "c"] }]);
+});
+test("removedSegments: top-of-file deletion anchored at 0", () => {
+  const base = ["x", "a", "b"].join("\n");
+  const right = ["a", "b"].join("\n");
+  assert.deepEqual(removedSegments(base, right), [{ afterRightLine: 0, lines: ["x"] }]);
+});
+test("removedSegments: trailing deletion anchored after the last right line", () => {
+  const base = ["a", "b", "c"].join("\n");
+  const right = ["a"].join("\n");
+  assert.deepEqual(removedSegments(base, right), [{ afterRightLine: 1, lines: ["b", "c"] }]);
+});
+test("removedSegments: an addition between deletions splits the runs", () => {
+  const base = ["a", "b", "d"].join("\n");
+  const right = ["a", "c", "d"].join("\n"); // b removed, c added, d kept
+  assert.deepEqual(removedSegments(base, right), [{ afterRightLine: 1, lines: ["b"] }]);
+  assert.deepEqual([...addedLineNumbers(base, right)], [2]); // c is the addition
+});
+test("removedSegments: no changes -> empty", () => {
+  assert.deepEqual(removedSegments("a\nb", "a\nb"), []);
 });
 
 console.log(`\n${passed} tests passed`);

@@ -60,7 +60,7 @@ export function App() {
   const [file, setFile] = useState<MdFile>();
   useEffect(() => setFile(files[0]), [files]);
 
-  const { text, threads, addedLines, loading, error: fileError, reload } = useFileData(ctx, file);
+  const { text, threads, addedLines, removedLines, loading, error: fileError, reload } = useFileData(ctx, file);
   const resolveImage = useImageResolver(ctx, file);
   const { posting, submit, reply, changeStatus } = useThreadActions(ctx, reload, flash);
 
@@ -150,6 +150,7 @@ export function App() {
             html={html}
             threads={visibleThreads}
             addedLines={addedLines}
+            removedLines={removedLines}
             selected={pick ? { startLine: pick.anchor.startLine, endLine: pick.anchor.endLine } : null}
             onPick={onPick}
             onRelativeLink={onRelativeLink}
