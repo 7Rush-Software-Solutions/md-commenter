@@ -14,7 +14,44 @@ import { useFileData } from "../hooks/useFileData";
 import { useImageResolver } from "../hooks/useImageResolver";
 import { useThreadActions } from "../hooks/useThreadActions";
 import { useEscapeKey } from "../hooks/useEscapeKey";
+import { Panel, usePanel } from "../hooks/usePanel";
 import { t } from "../i18n";
+
+interface ResizerProps {
+  side: "left" | "right";
+  panel: Panel;
+  label: string;
+  badge?: number;
+}
+
+/** Drag-to-resize / click-to-collapse strip between two columns. */
+function Resizer({ side, panel, label, badge }: ResizerProps) {
+  // Collapsed: a full-height edge rail — click anywhere to reopen; shows what's hidden + a count.
+  if (!panel.open) {
+    return (
+      <button type="button" className={`mdr-rail mdr-rail-${side}`} onClick={panel.toggle} title={`${t("expand")} · ${label}`}>
+        <span className="mdr-rail-chevron" aria-hidden="true">{side === "left" ? "›" : "‹"}</span>
+        <span className="mdr-rail-label">{label}</span>
+        {badge ? <span className="mdr-rail-badge">{badge}</span> : null}
+      </button>
+    );
+  }
+  // Open: thin drag strip with a small collapse button; chevron points the way it closes.
+  const h = panel.handlers;
+  return (
+    <div className="mdr-resizer" onPointerDown={h.onPointerDown} onPointerMove={h.onPointerMove} onPointerUp={h.onPointerUp}>
+      <button
+        type="button"
+        className="mdr-collapse"
+        onClick={panel.toggle}
+        onPointerDown={(e) => e.stopPropagation()}
+        title={t("collapse")}
+      >
+        {side === "left" ? "‹" : "›"}
+      </button>
+    </div>
+  );
+}
 
 export function App() {
   const { toast, flash } = useToast();
@@ -35,6 +72,9 @@ export function App() {
   // Clear the selection whenever the file (or context) changes.
   useEffect(() => setPick(null), [ctx, file]);
   useEscapeKey(useCallback(() => setPick(null), []));
+
+  const left = usePanel("mdr.left", 230, 150, 480, "left");
+  const right = usePanel("mdr.right", 360, 260, 640, "right");
 
   const lines = useMemo(() => splitLines(text), [text]);
   const html = useMemo(() => md.render(text), [text]);
@@ -75,9 +115,20 @@ export function App() {
   if (prError && !ctx) return <div className="mdr-empty mdr-error">{prError}</div>;
   if (ctx && !files.length) return <div className="mdr-empty">{t("noMarkdownFiles")}</div>;
 
+  const openThreads = useMemo(() => threads.filter((th) => isOpen(th.status)).length, [threads]);
+
+  const gridVars = {
+    "--mdr-left": `${left.open ? left.width : 0}px`,
+    "--mdr-right": `${right.open ? right.width : 0}px`,
+    "--mdr-grip-l": left.open ? "6px" : "34px",
+    "--mdr-grip-r": right.open ? "6px" : "34px",
+  } as React.CSSProperties;
+
   return (
-    <div className="mdr-app">
+    <div className="mdr-app" style={gridVars}>
       <FileList files={files} current={file} ctx={ctx} stage={stage} openCount={openCount} onSelect={setFile} />
+
+      <Resizer side="left" panel={left} label={t("railFiles")} badge={files.length} />
 
       <main className="mdr-main">
         <Toolbar
@@ -106,6 +157,8 @@ export function App() {
           />
         )}
       </main>
+
+      <Resizer side="right" panel={right} label={t("railComments")} badge={openThreads} />
 
       <CommentPanel
         pick={pick}
